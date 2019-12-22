@@ -5,18 +5,24 @@ from keras import layers
 import numpy as np
 import tensorflow as tf
 import pickle
+import json
 
 graph = tf.get_default_graph()
 sess = tf.Session()
 set_session(sess)
 
+
 class HumorClassifier:
 
     def __init__(self):
-        self.model = create_model()
+
+        with open("params.json", "r") as f:
+            params = json.load(f)
+            self.max_len = int(params['max_len'])
+
+        self.model = create_model(params)
         self.model.load_weights('weights.h5')
         self.model._make_predict_function()
-        self.maxlen = self.model.layers[0].input_shape[1]
 
         with open('tokenizer.bin', 'br') as f:
             self.tokenizer = pickle.load(f)
@@ -27,20 +33,22 @@ class HumorClassifier:
 
         text = np.array([text])
         text = self.tokenizer.texts_to_sequences(text)
-        text = pad_sequences(text, padding='post', maxlen=self.maxlen)
+        text = pad_sequences(text, padding='post', maxlen=self.max_len)
         with graph.as_default():
             set_session(sess)
             return self.model.predict_classes(text)[0][0]
 
 
-def create_model():
+def create_model(params):
     embedding_dim = 256
+    max_len = int(params['max_len'])
+    vocab_size = int(params['vocab_size'])
 
     filter_sizes = [2, 3, 5, 7]
     conv_filters = []
 
-    input_tensor = layers.Input(shape=(70,))
-    input_layer = layers.Embedding(238642, embedding_dim, input_length=70)(input_tensor)
+    input_tensor = layers.Input(shape=(max_len,))
+    input_layer = layers.Embedding(vocab_size, embedding_dim, input_length=70)(input_tensor)
 
     for f_size in filter_sizes:
         conv_filter = layers.Conv1D(128, f_size, activation='relu')(input_layer)
