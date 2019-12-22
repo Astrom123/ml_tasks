@@ -1,0 +1,3 @@
+keras
+PyQt5
+numpy
