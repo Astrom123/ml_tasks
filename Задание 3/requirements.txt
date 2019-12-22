@@ -1,3 +1,4 @@
 keras
-PyQt5
+pytelegrambotapi
 numpy
+tensorflow
